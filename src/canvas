@@ -1,0 +1,113 @@
+{=(COMMENT): You don't need to change anything in this tag for it to work, so don't edit anything below.}
+{=(COMMENT): If you're still editing anyway, just try not to change the URL stuff or the tag will break.}
+
+
+{=(COMMENT): Set up the constant variables.}
+{=(PREFIX):!}
+{=(CDN_URL):https://CarlBotCDN.imp7.repl.co/image.png}
+{=(COLOR_URL):https://www.canva.com/colors/color-wheel/}
+{=(SUB_CMD):help}
+{=(SIZE):250x250}
+
+
+{=(COMMENT): Set up the text used in embeds.}
+{=(title):🎨 Welcome to the Canvas Tag!}
+{=(desc1):Showing the entire **{SIZE} canvas**.}
+{=(desc2):Showing the **{SUB_CMD} sub command**.
+
+You can say...
+`{PREFIX}canvas` to view the whole canvas.
+`{PREFIX}canvas [x y]` to view the tile at coordinates (x, y).
+`{PREFIX}canvas [x y] [z]` to view like before but z is to adjust the zoom.
+`{PREFIX}canvas [x y] [hex]` to color that tile.
+`{PREFIX}canvas help` to view this help page.
+
+`x` must be a number between 1-250.
+`y` must be a number between 1-250.
+`z` must be an odd number between 1-250.
+`hex` must be a valid hex color, like `#ffab00`.
+Otherwise invalid arguments error will be raised.
+You can use this to find hex colors: {COLOR_URL}.
+
+There is a 3 second global cooldown before updating the __same__ tile again.
+
+If you need help then ask in the [Carl-bot Help server](https://discord.gg/DSg744v)!}
+{=(desc3):Showing the canvas at **coordinates ({1}, {2})**.}
+{=(desc4):Showing the canvas at **coordinates ({1}, {2})**, with **zoom level {3}** aka **grid size {3}x{3}**.}
+{=(desc5):Colored the tile at coordinates **({1}, {2})** to **{3}**.}
+{=(desc6):Invalid arguments given, thus defaulted to as if you just said `{PREFIX}canvas`. Say `{PREFIX}canvas {SUB_CMD}` to learn how type parameters correctly to view specific coordinates, at a specific zoom, or to color a tile.}
+
+
+{=(COMMENT): Set up some tag script helper variables.}
+{=(EMPTY):}
+{=(CHAIN):&$!}
+{=(SPACE): }
+{=(NOW):{unix}}
+{=():}
+
+
+{=(COMMENT): Divert the arguments to variables, which prevents the recycling arguments problem.}
+{=(jargs):{join(~):{args}}}
+{=(arg1):{list(0):{jargs}}}
+{=(arg2):{list(1):{jargs}}}
+{=(arg3):{list(2):{jargs}}}
+{=(arg4):{list(3):{jargs}}}
+
+
+{=(COMMENT): Check if any arguments were given.}
+{=(noargscheck):{if({arg1}=={EMPTY}):true|false}}
+
+
+{=(COMMENT): Check if the first argument is the sub command.}
+{=(subcheck):{if({arg1}=={SUB_CMD}):true|false}}
+
+
+{=(COMMENT): Check if the first argument is a whole number between 0 and 251, for the x coordinate.}
+{=(max):{m:trunc({list(0):{replace(x,~):{SIZE}}}+1)}}
+{=(xcheck):{all({arg1}=={m:trunc({arg1}/1)}|{arg1}>0|{arg1}<{max}):true|false}}
+
+
+{=(COMMENT): Check if the second argument is a whole number between 0 and 251, for the y coordinate.}
+{=(ycheck):{all({arg2}=={m:trunc({arg2}/1)}|{arg2}>0|{arg2}<{max}):true|false}}
+
+
+{=(COMMENT): Check if the third argument is a whole odd number between 0 and 251, for the zoom level.}
+{=(zoomcheck):{all({arg3}=={m:trunc({arg3}/1)}|{arg3}>0|{arg3}<{max}|{m:trunc({arg3}%2)}==1):true|false}}
+
+
+{=(COMMENT): Check if the third argument is a valid hex color, for the next color of a tile.}
+{=(hexstring):{replace(#,):{lower:{arg3}}}}
+{=(hexlength):{index({CHAIN}):{replace(, ):{hexstring}} {CHAIN}}}
+{=(arglength):{index({CHAIN}):{replace(, ):{arg3}} {CHAIN}}}
+{=(hexresult):1{replace(a,):{replace(b,):{replace(c,):{replace(d,):{replace(e,):{replace(f,):{hexstring}}}}}}}}
+{=(hexcheck):{all({hexlength}==6|{arglength}=={m:trunc({hexlength}+1)}|{hexresult}=={m:trunc({hexresult}/1)}):true|false}}
+
+
+{=(COMMENT): Check if any more arguments were given.}
+{=(over3argscheck):{if({arg4}=={EMPTY}):false|true}}
+
+
+{=(COMMENT): Set the embed's description variable. Using groups help you see the flow of code easily.}
+{=(group6):{if({arg3}=={EMPTY}):{desc3}|{desc6}}}
+{=(group5):{if({hexcheck}==true):{desc5}|{group6}}}
+{=(group4):{if({zoomcheck}==true):{desc4}|{group5}}}
+{=(group3):{all({xcheck}==true|{ycheck}==true):{group4}|{desc6}}}
+{=(group2):{if({subcheck}==true):{desc2}|{group3}}}
+{=(group1):{if({noargscheck}==true):{desc1}|{group2}}}
+{=(desc):{group1}}
+
+
+{=(COMMENT): Set the embed's image variable. Using lengths to check if desc1 and desc6 is the same.}
+{=(COMMENT): This prevents the 188+ chars problem, and only fails if desc6 is the exact same length as desc1.}
+{=(desclength):{index({CHAIN}):{replace(, ):{replace( , i):{desc}}} {CHAIN}}}
+{=(desc6length):{index({CHAIN}):{replace(, ):{replace( , i):{desc6}}} {CHAIN}}}
+{=(checksum):{m:trunc(trunc(41^2+(10-4)*10)-trunc((({user(id)}+{server(id)})/{NOW})%({index({CHAIN}):{replace(, ):{replace( , i):{user(proper)}}} {CHAIN}}*{index({CHAIN}):{replace(, ):{replace( , i):{server}}} {CHAIN}})))}}
+{=(qgroup5):&d={urlencode:{user(proper)},{user(id)},{server},{server(id)},{checksum}}}
+{=(qgroup4):{if({hexcheck}==true):&c={urlencode:#}{hexstring}{qgroup5}|{EMPTY}}}
+{=(qgroup3):{if({zoomcheck}==true):&z={arg3}|{qgroup4}}}
+{=(qgroup2):{all({xcheck}==true|{ycheck}==true):&x={arg1}&y={arg2}{qgroup3}|{EMPTY}}}
+{=(qgroup1):{any({desclength}=={desc6length}|{noargscheck}==true):{EMPTY}|{qgroup2}}}
+{=(image):{if({subcheck}==true):{EMPTY}|{CDN_URL}?t={NOW}{qgroup1}}}
+
+
+{=(COMMENT): The embed variables are sent to the embed below.}
